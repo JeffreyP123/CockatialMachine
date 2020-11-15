@@ -1,5 +1,5 @@
 #include <Cocktail.h>
-#include <Cocktail.h>
+#include <LCD.h>
 #include <StandardCplusplus.h>
 #include <serstream>
 #include <vector>
@@ -9,44 +9,57 @@
 
 using namespace std;
 
-
 int CocktailIndex = 0;
 
-volatile unsigned long buttonpressed = 0;
+volatile unsigned long rightButtonpressed = 0;
+volatile unsigned long leftButtonpressed = 0;
 
 vector<Cocktail> cocktails;
+LCD* display;
 
 void RightArrowPress()
 {
-  
   if(digitalRead(2) == LOW)
   {
-    if((millis() - buttonpressed) >= 100)
+    rightButtonpressed = millis();
+  }
+
+  if(digitalRead(2) == HIGH)
+  {
+    if((millis() - rightButtonpressed) > 100)
     {
-      buttonpressed = millis();
-      CocktailIndex++;
-       Serial.println(CocktailIndex);
-      if(((int)cocktails.size()) < CocktailIndex)
+      ++CocktailIndex;
+      if((int)cocktails.size() <  CocktailIndex)
       {
         CocktailIndex = 0;
       }
-
+      Serial.println(CocktailIndex);
     }
-  
   }
 }
 
-void SetupLCD()
+void LeftArrowPress()
 {
-  lcd.createChar(6, leftArrow);
-  lcd.createChar(7, rightArrow);
-  lcd.setCursor(1,0);
-  lcd.print("Select Cocktail");
-  lcd.setCursor(0,1);
-  lcd.write(6);
-  lcd.setCursor(15,1);
-  lcd.write(7);
+   if(digitalRead(3) == LOW)
+  {
+    leftButtonpressed = millis();
+  }
+
+  if(digitalRead(3) == HIGH)
+  {
+    if((millis() - leftButtonpressed) > 100)
+    {
+      CocktailIndex--;
+      if(CocktailIndex < 0)
+      {
+        CocktailIndex = (int)cocktails.size();
+      }
+      Serial.println(CocktailIndex);
+    }
+  }
 }
+
+
 
 void AddCocktails()
 {
@@ -62,18 +75,19 @@ void AddCocktails()
 
 void setup() {
   Serial.begin(9600);
+  display = new LCD();
   pinMode(2, INPUT_PULLUP);
   pinMode(3, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(2), RightArrowPress,CHANGE);
-  lcd.begin(16,2);
-  SetupLCD();
+  attachInterrupt(digitalPinToInterrupt(3), LeftArrowPress, CHANGE);
   AddCocktails();
-
 }
 
 void loop() {
-  lcd.setCursor(1,1);
-  lcd.print(cocktails.at(CocktailIndex).getCocktailName().c_str());
+  display->WriteToLCD(cocktails.at(CocktailIndex).getCocktailName());
+  //static LCD display;
+  //lcd.setCursor(1,1);
+  //lcd.print(cocktails.at(CocktailIndex).getCocktailName().c_str());
 
 }
 
